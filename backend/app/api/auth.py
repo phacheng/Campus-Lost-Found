@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, Response
 
 from app.api.deps import SESSION_COOKIE, require_user
-from app.auth import login, logout, register
+from app.auth import login, logout, register, start_session
 from app.errors import Unauthenticated
 from app.idempotency import replay_if_done, save
 from app.schemas import LoginBody, RegisterBody, User
@@ -15,7 +15,8 @@ router = APIRouter(tags=["auth"])
 
 def _issue_session(response: Response, user: User) -> None:
     """写入 Cookie clf_session：httponly、samesite=lax、path=/。value 用会话 id，不要用 user.id。"""
-    raise NotImplementedError(f"issue {SESSION_COOKIE} for {user.id} via {type(response).__name__}")
+    session_id = start_session(user.id)
+    response.set_cookie(SESSION_COOKIE, session_id, httponly=True, samesite="lax", path="/")
 
 
 @router.post("/auth/register", status_code=201)
